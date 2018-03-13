@@ -21,6 +21,7 @@ Created on Thu Oct 19 12:19:05 2017
 import feedparser
 import time
 import sys
+import csv
 
 import numpy as np
 import pandas as pd
@@ -189,7 +190,6 @@ def cluster_rss_feed():
 #    c.append(a)    
 #    print summary    
 
-
     feeddata = []
     feed_title=[]
     try:
@@ -209,6 +209,7 @@ def cluster_rss_feed():
                 print ('Failed to parse feed %s' % url)
     except:
         print ('Failed to parse feed %s' % url)
+       
                 
 #    totalvocab_stemmed = []
 #    totalvocab_tokenized = []
@@ -221,10 +222,7 @@ def cluster_rss_feed():
    
 #    vocab_frame = pd.DataFrame({'words': totalvocab_tokenized})
 #    vocab_stem_frame = pd.DataFrame({'stem_words': totalvocab_stemmed})
-
-
 #    print ('there are ' + str(vocab_frame.shape[0]) + ' items in vocab_frame')
-
 
     tfidf_vectorizer = TfidfVectorizer(max_df=0.8, max_features=200000,
              min_df=0.2, stop_words='english',
@@ -234,12 +232,14 @@ def cluster_rss_feed():
 
     print(tfidf_matrix.shape)
     terms = tfidf_vectorizer.get_feature_names()
+    
+    with open("data/terms.txt", "w") as out_file:
+        for line in terms:
+            out_file.write(line + '\n')
+    text_file.close()
 
 #    dense_tfidf_matrix = tfidf_matrix.toarray()
-    
-    
 #    feed_title = a
-    
     
     num_clusters = 6
     km = KMeans(n_clusters=num_clusters)
@@ -253,28 +253,45 @@ def cluster_rss_feed():
     print("Top terms per cluster:")
     print()
     #sort cluster centers by proximity to centroid
+    file_name = 'data/rss_clusters.csv'
+    
+    rss_clusters.to_csv(file_name, sep=',', encoding='utf-8')
+
     order_centroids = km.cluster_centers_.argsort()[:, ::-1] 
     
 #    news_clusters.ix[5]['title'].values.tolist()
 
-    file1 = open("data/rss_cluster_report.html","w")
-    
-    for i in range(num_clusters):
-        print ("Cluster %d words:" % i, end='')
-        
-        for ind in order_centroids[i, :6]: #replace 6 with n words per cluster
-            print(' %s' % terms[ind], end=',')
-        print() #add whitespace
-        print() #add whitespace
-        
-        print("Cluster %d news titles:" % i, end='')
-        for title in rss_clusters.ix[i]['title'].values.tolist():
-            print(' %s,' % title, end='')
-        print() #add whitespace
-        print() #add whitespace
-        
-    print()
-    print()
+    with open("data/cluster_words.txt", "w") as out_file:
+        for i in range(num_clusters):
+            print ("Cluster %d words:" % i, end='')
+            out_file.write("Cluster %d words:" % i + '\n')
+            
+            for ind in order_centroids[i, :6]: #replace 6 with n words per cluster
+                print(' %s' % terms[ind], end=',')
+                out_file.write(' %s' % terms[ind] + ',' )
+                out_file.write('\n' )
+
+
+            print() #add whitespace
+            print() #add whitespace
+            
+            print("Cluster %d news titles:" % i, end='')
+            out_file.write("Cluster %d news titles:" % i )
+            out_file.write('\n' )
+            for title in rss_clusters.ix[i]['title'].values.tolist():
+                print(' %s,' % title, end='')
+                out_file.write(' %s,' % title + ' ')
+            out_file.write('\n' )
+            out_file.write('\n' )
+
+            print() #add whitespace
+            print() #add whitespace
+            
+        print()
+        print()
+
+    out_file.close()
+
 
     MDS()
     
@@ -379,7 +396,7 @@ def cluster_rss_feed():
     
     #uncomment below to save figure
     
-    fig.savefig('data/ward_clusters.png', dpi=200) #save figure as ward_clusters
+    fig.savefig('data/ward_cluster.png', dpi=200) #save figure as ward_clusters
 
 
 
